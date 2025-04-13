@@ -19,16 +19,6 @@ on:
         description: "Özel sürüm numarası"
         required: true
         type: string
-      OneDrive:
-        description: "OneDrive seçeneği"
-        required: true
-        type: boolean
-        default: true
-      GithubRelease:
-        description: "GitHub Release seçeneği"
-        required: true
-        type: boolean
-        default: false
       pack_type:
         description: "Payload.bin dosyasını paketle"
         required: true
@@ -56,21 +46,6 @@ jobs:
           json_output=${json_output%,}
           json_output+="]}"
           echo "matrix=$json_output" >> $GITHUB_OUTPUT
-  removeRelease:
-    if: github.event.inputs.GithubRelease == 'true'
-    name: ${{ inputs.custom_version }} GitHub Release'ını Sil
-    runs-on: ubuntu-latest
-    steps:
-      - name: ${{ inputs.custom_version }} GitHub Release'ını Sil
-        uses: ncipollo/release-action@main
-        with:
-          owner: hasan1124
-          repo: action_build_HyperOS
-          name: "${{ inputs.custom_version }}"
-          tag: "${{ inputs.custom_version }}"
-          allowUpdates: true
-          removeArtifacts: true
-          token: ${{ secrets.GH_TOKEN }}
   build:
     name: Otomatik Yapı
     runs-on: ubuntu-latest
@@ -116,59 +91,25 @@ jobs:
           fi
           echo "date=$date" >> "$GITHUB_ENV"
           aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$ORIGIN_URL"
-          TARGET_ZIP_NAME=$(echo "$URL" | cut -d"?" -f1 | cut -d"/" -f5)
-          if [[ "$URL" == *PrePackages* ]]; then
-            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PrePackages/"$TARGET_ZIP_NAME" "$GITHUB_WORKSPACE"
-          elif [[ "$URL" != "$ORIGIN_URL" ]]; then
-            aria2c -x16 -j$(nproc) -U "Mozilla/5.0" -d "$GITHUB_WORKSPACE" "$URL"
-          fi
-          if [[ "$pack_type" == "true" ]]; then
-            if [[ "$device" == "sagit" ]]; then
-              rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/sagit.txt "$GITHUB_WORKSPACE"
-              dos2unix "$GITHUB_WORKSPACE"/sagit.txt
-              post_package=$(cat "$GITHUB_WORKSPACE"/sagit.txt)
-            fi
-            echo "post_package=$post_package" >> $GITHUB_ENV
-          fi
-        env:
-          MATRIX_CONTEXT: ${{ toJson(matrix) }}
-          custom_version: ${{ inputs.custom_version }}
-          ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
-          URL: ${{ inputs.URL }}
-          pack_type: ${{ inputs.pack_type }}
-      - if: github.event.inputs.pack_type == 'true'
-        name: ${{ env.post_package }} İndiriliyor
-        run: |
-          if [[ -n "$post_package" ]]; then
-            rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/"$post_package" "$GITHUB_WORKSPACE"/tools/payload_repack
-          fi
       - name: TWRP İndir
         uses: robinraju/release-downloader@v1.9
         with:
-            repository: hasan1124/TWRP_Backup
-            tag: "twrp"
-            fileName: "*sagit*"
-            out-file-path: "sagit_files"
-            token: ${{ secrets.GH_TOKEN }}
+          repository: hasan1124/TWRP_Backup
+          tag: "twrp"
+          fileName: "*sagit*"
+          out-file-path: "sagit_files"
+          token: ${{ secrets.GH_TOKEN }}
       - name: Otomatik Yapı
         run: |
-          sudo appToken="${{ secrets.appToken }}" TMPDIR="$GITHUB_WORKSPACE"/TMPDIR user=$(whoami) bash build_local_HyperOS.sh $ORIGIN_URL $URL $device $date $pack_type "$post_package"
-          cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
-        env:
-          ORIGIN_URL: ${{ inputs.ORIGIN_URL }}
-          URL: ${{ inputs.URL }}
-          pack_type: ${{ inputs.pack_type }}
-      - if: github.event.inputs.GithubRelease == 'true'
-        name: GitHub Release'a Yükle
-        uses: ncipollo/release-action@main
-        with:
-          owner: hasan1124
-          repo: action_build_HyperOS
-          artifacts: ${{ github.workspace }}/GithubRelease/*
-          name: "${{ inputs.custom_version }}"
-          tag: "${{ inputs.custom_version }}"
-          bodyFile: "${{ github.workspace }}/file.log"
-          allowUpdates: true
-          artifactErrorsFailBuild: true
-          removeArtifacts: true
-          token: ${{ secrets.GH_TOKEN }}
+          sudo appToken="${{ secrets.appToken }}" TMPDIR="$GITHUB_WORKSPACE"/TMPDIR user=$(whoami) bash build_local_HyperOS.sh $ORIGIN_URL $URL $device $date $pack_type
+      - name: ROM Dosyasını Mega.nz'e Yükle
+        run: |
+          # Mega.nz CLI aracını yükleyin
+          curl -sL https://github.com/tonikelope/megacmd/releases/latest/download/megacmd-linux-x64.tar.gz | tar xz
+          sudo mv megacmd /usr/local/bin/
+          
+          # Mega.nz giriş bilgilerini ayarlayın
+          mega-login ${{ secrets.MEGA_EMAIL }} ${{ secrets.MEGA_PASSWORD }}
+          
+          # ROM dosyasını yükleyin
+          mega-put "$GITHUB_WORKSPACE"/output/ROM.zip /ROMs/
