@@ -35,15 +35,6 @@ on:
         type: boolean
         default: true
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Use Secret Token
-        run: echo "Using Secret: ${{ secrets.MY_SECRET_TOKEN }}"
-jobs:
   build_matrix:
     name: Yapı Matrisi Ayarla
     runs-on: ubuntu-latest
