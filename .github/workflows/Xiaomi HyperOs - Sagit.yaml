@@ -8,11 +8,11 @@ on:
         default: "sagit"
         required: true
       ORIGIN_URL:
-        description: "Orijinal paket indirme bağlantısı"
+        description: https://mega.nz/file/r8kAGaID#pTNKgEV4-Xhm4A229dzsvsQk3foK2-uHHwLMCw9hqL8
         required: true
         type: string
       URL:
-        description: "Portlanmış paket indirme bağlantısı"
+        description: https://netix.dl.sourceforge.net/project/xiaomi-eu-multilang-miui-roms/xiaomi.eu/HyperOS-STABLE-RELEASES/HyperOS2.0/xiaomi.eu_SUNSTONE_OS2.0.2.0.UMQCNXM_14.zip?viasf=1
         required: true
         type: string
       custom_version:
