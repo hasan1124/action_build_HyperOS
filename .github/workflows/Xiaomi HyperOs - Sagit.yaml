@@ -109,7 +109,7 @@ jobs:
           sudo mv megacmd /usr/local/bin/
           
           # Mega.nz giriş bilgilerini ayarlayın
-          mega-login ${{ secrets.hasan_1124@hotmail.com }} ${{ secrets.Dimple1124 }}
+          mega-login ${{ secrets.MEGA_EMAIL }} ${{ secrets.MEGA_PASSWORD }}
           
           # ROM dosyasını yükleyin
           mega-put "$GITHUB_WORKSPACE"/output/ROM.zip /ROMs/
