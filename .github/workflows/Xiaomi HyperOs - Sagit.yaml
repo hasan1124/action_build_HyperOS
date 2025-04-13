@@ -3,45 +3,45 @@ on:
   workflow_dispatch:
     inputs:
       build_matrix:
-        description: "构建阵列，以英文逗号分隔"
+        description: "Cihaz listesini virgülle ayırarak belirtin"
         type: string
         default: "sagit"
         required: true
       ORIGIN_URL:
-        description: "底包的下载地址"
+        description: "Orijinal paket indirme bağlantısı"
         required: true
         type: string
       URL:
-        description: "移植包的下载地址"
+        description: "Portlanmış paket indirme bağlantısı"
         required: true
         type: string
       custom_version:
-        description: "自定义版本号"
+        description: "Özel sürüm numarası"
         required: true
         type: string
       OneDrive:
-        description: "OneDrive"
+        description: "OneDrive seçeneği"
         required: true
         type: boolean
         default: true
       GithubRelease:
-        description: "Github Release"
+        description: "GitHub Release seçeneği"
         required: true
         type: boolean
         default: false
       pack_type:
-        description: "打包Payload.bin"
+        description: "Payload.bin dosyasını paketle"
         required: true
         type: boolean
         default: true
 jobs:
   build_matrix:
-    name: 设置构建阵列
+    name: Yapı Matrisi Ayarla
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: 设置构建阵列
+      - name: Yapı Matrisi Ayarla
         id: set-matrix
         run: |
           input_var="${{ github.event.inputs.build_matrix }}"
@@ -58,10 +58,10 @@ jobs:
           echo "matrix=$json_output" >> $GITHUB_OUTPUT
   removeRelease:
     if: github.event.inputs.GithubRelease == 'true'
-    name: 删除 ${{ inputs.custom_version }} 的 Github Release
+    name: ${{ inputs.custom_version }} GitHub Release'ını Sil
     runs-on: ubuntu-latest
     steps:
-      - name: 删除 ${{ inputs.custom_version }} 的 Github Release
+      - name: ${{ inputs.custom_version }} GitHub Release'ını Sil
         uses: ncipollo/release-action@main
         with:
           owner: hasan1124
@@ -72,14 +72,14 @@ jobs:
           removeArtifacts: true
           token: ${{ secrets.GH_TOKEN }}
   build:
-    name: 自动构建
+    name: Otomatik Yapı
     runs-on: ubuntu-latest
     needs: build_matrix
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.build_matrix.outputs.matrix) }}
     steps:
-      - name: 精简无用组件
+      - name: Gereksiz Bileşenleri Temizle
         run: |
           docker rmi `docker images -q` || true
           sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/sudo apt/sources.list.d || true
@@ -87,7 +87,7 @@ jobs:
           sudo apt -y autoremove --purge || true
           sudo apt -y autoclean || true
           sudo apt clean || true
-      - name: 最大化并挂载构建空间
+      - name: Yapı Alanını Maksimize Et ve Bağla
         uses: easimon/maximize-build-space@master
         with:
           root-reserve-mb: 1024
@@ -96,13 +96,13 @@ jobs:
           temp-reserve-mb: 1024
           remove-android: "true"
           remove-haskell: "true"
-      - name: 检出仓库文件
+      - name: Depoyu Çek
         uses: actions/checkout@v4.1.1
         with:
           repository: hasan1124/action_build_HyperOS
           ref: main
           token: ${{ secrets.GH_TOKEN }}
-      - name: 下载系统包
+      - name: Sistem Paketini İndir
         run: |
           eval $(cat build_local_HyperOS.sh | grep "apt-get")
           sudo bash "$GITHUB_WORKSPACE"/tools/install_rclone.sh ${{ secrets.GH_TOKEN }}
@@ -137,12 +137,12 @@ jobs:
           URL: ${{ inputs.URL }}
           pack_type: ${{ inputs.pack_type }}
       - if: github.event.inputs.pack_type == 'true'
-        name: 下载 ${{ env.post_package }} 
+        name: ${{ env.post_package }} İndiriliyor
         run: |
           if [[ -n "$post_package" ]]; then
             rclone copy -P OneDrive:/MI_Packages/RubbishBin/PreArtifacts/"$post_package" "$GITHUB_WORKSPACE"/tools/payload_repack
           fi
-      - name: 下载 TWRP
+      - name: TWRP İndir
         uses: robinraju/release-downloader@v1.9
         with:
             repository: hasan1124/TWRP_Backup
@@ -150,7 +150,7 @@ jobs:
             fileName: "*sagit*"
             out-file-path: "sagit_files"
             token: ${{ secrets.GH_TOKEN }}
-      - name: 自动构建
+      - name: Otomatik Yapı
         run: |
           sudo appToken="${{ secrets.appToken }}" TMPDIR="$GITHUB_WORKSPACE"/TMPDIR user=$(whoami) bash build_local_HyperOS.sh $ORIGIN_URL $URL $device $date $pack_type "$post_package"
           cat "$GITHUB_WORKSPACE"/PackageInfo.txt >> $GITHUB_ENV
@@ -159,7 +159,7 @@ jobs:
           URL: ${{ inputs.URL }}
           pack_type: ${{ inputs.pack_type }}
       - if: github.event.inputs.GithubRelease == 'true'
-        name: 上传到Github Release
+        name: GitHub Release'a Yükle
         uses: ncipollo/release-action@main
         with:
           owner: hasan1124
